@@ -62,3 +62,15 @@ int Func_MOD1(HWND hWnd, wchar_t* outBuf, int maxCount)
     );
     return (res == 1) ? 1 : 0;
 }
+
+extern WCHAR g_DisplayText[256];
+
+void MyWork1(HWND hWnd)
+{
+    WCHAR tempBuf[256] = { 0 };
+
+    if (Func_MOD1(hWnd, tempBuf, 256) == 1) {
+        wsprintfW(g_DisplayText, L"Selected group: %s", tempBuf);
+        InvalidateRect(hWnd, NULL, TRUE);
+    }
+}

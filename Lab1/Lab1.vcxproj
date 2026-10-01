@@ -153,6 +153,8 @@
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Lab1.rc" />
+    <ResourceCompile Include="module1.rc" />
+    <ResourceCompile Include="module2.rc" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="Lab1.ico" />

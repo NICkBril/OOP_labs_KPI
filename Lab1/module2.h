@@ -1,4 +1,6 @@
 #pragma once
 #include <windows.h>
 
-extern int Func_MOD2(HWND hWnd, wchar_t* outBuf, int maxCount);
+void MyWork2(HWND hWnd);
+
+int Func_MOD2(HWND hWnd, wchar_t* outBuf, int maxCount);

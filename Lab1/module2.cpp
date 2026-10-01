@@ -51,3 +51,15 @@ int Func_MOD2(HWND hWnd, wchar_t* outBuf, int maxCount)
 
     return (res == 1) ? 1 : 0;
 }
+
+extern WCHAR g_DisplayText[256];
+
+void MyWork2(HWND hWnd)
+{
+    WCHAR tempBuf[256] = { 0 };
+
+    if (Func_MOD2(hWnd, tempBuf, 256) == 1) {
+        wsprintfW(g_DisplayText, L"Your text: %s", tempBuf);
+        InvalidateRect(hWnd, NULL, TRUE);
+    }
+}

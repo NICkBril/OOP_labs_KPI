@@ -16,8 +16,6 @@ BOOL                InitInstance(HINSTANCE, int);
 LRESULT CALLBACK    WndProc(HWND, UINT, WPARAM, LPARAM);
 INT_PTR CALLBACK    About(HWND, UINT, WPARAM, LPARAM);
 
-void MyWork1(HWND hWnd);
-void MyWork2(HWND hWnd);
 
 int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
     _In_opt_ HINSTANCE hPrevInstance,
@@ -148,22 +146,4 @@ INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
         break;
     }
     return (INT_PTR)FALSE;
-}
-
-void MyWork1(HWND hWnd)
-{
-    WCHAR tempBuf[256] = { 0 };
-    if (Func_MOD1(hWnd, tempBuf, 256) == 1) {
-        wsprintfW(g_DisplayText, L"Selected group: %s", tempBuf);
-        InvalidateRect(hWnd, NULL, TRUE);
-    }
-}
-
-void MyWork2(HWND hWnd)
-{
-    WCHAR tempBuf[256] = { 0 };
-    if (Func_MOD2(hWnd, tempBuf, 256) == 1) {
-        wsprintfW(g_DisplayText, L"Your text: %s", tempBuf);
-        InvalidateRect(hWnd, NULL, TRUE);
-    }
 }
