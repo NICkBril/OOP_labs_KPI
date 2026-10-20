@@ -2,8 +2,6 @@
 #include "shape.h"
 #include "editor.h"
 
-#include <windowsx.h>
-
 const int MAX_SHAPES = 103;
 
 class ShapeEditor : public Editor
@@ -19,42 +17,26 @@ protected:
 
     virtual Shape* CreateShape(long x1, long y1, long x2, long y2) = 0;
 
-    virtual void DrawPreview(HDC hdc, long x, long y)
+    virtual void DrawOutline(HDC hdc, long x, long y)
     {
-        if (GetShapeType() == 0) {
-            return;
-        }
+    }
 
+    void DrawPreview(HDC hdc, long x, long y)
+    {
         HPEN hPen = CreatePen(PS_DOT, 1, RGB(0, 0, 0));
         HPEN hOldPen = (HPEN)SelectObject(hdc, hPen);
         HBRUSH hOldBrush =
             (HBRUSH)SelectObject(hdc, GetStockObject(NULL_BRUSH));
 
-        SetROP2(hdc, R2_NOTXORPEN);
+        int oldRop = SetROP2(hdc, R2_NOTXORPEN);
 
-        if (GetShapeType() == 1) {
-            MoveToEx(hdc, startX, startY, NULL);
-            LineTo(hdc, x, y);
-        } else if (GetShapeType() == 2) {
-            long left = 2 * startX - x;
-            long top = 2 * startY - y;
+        DrawOutline(hdc, x, y);
 
-            long x1 = (left < x) ? left : x;
-            long y1 = (top < y) ? top : y;
-            long x2 = (left > x) ? left : x;
-            long y2 = (top > y) ? top : y;
-
-            Rectangle(hdc, x1, y1, x2, y2);
-        } else if (GetShapeType() == 3) {
-            Ellipse(hdc, startX, startY, x, y);
-        }
-
+        SetROP2(hdc, oldRop);
         SelectObject(hdc, hOldBrush);
         SelectObject(hdc, hOldPen);
         DeleteObject(hPen);
     }
-
-    virtual int GetShapeType() = 0;
 
 public:
     ShapeEditor(Shape** shapes, int* count, HWND window)
@@ -87,14 +69,9 @@ public:
 
     void OnLBup(HWND window) override
     {
-        if (!drawing) {
+        if (!drawing)
+        {
             return;
-        }
-
-        if (GetShapeType() != 0) {
-            HDC hdc = GetDC(window);
-            DrawPreview(hdc, lastX, lastY);
-            ReleaseDC(window, hdc);
         }
 
         POINT point;
@@ -104,9 +81,12 @@ public:
         long endX = point.x;
         long endY = point.y;
 
+        HDC hdc = GetDC(window);
+        DrawPreview(hdc, lastX, lastY);
+        ReleaseDC(window, hdc);
+
         drawing = false;
         ReleaseCapture();
-
 
         if (*shapeCount < MAX_SHAPES) {
             Shape* shape = CreateShape(
@@ -114,7 +94,6 @@ public:
             );
 
             if (shape != nullptr) {
-                shape->Set(startX, startY, endX, endY);
                 pcshape[*shapeCount] = shape;
                 (*shapeCount)++;
             }
@@ -129,25 +108,18 @@ public:
             return;
         }
 
-
         POINT point;
         GetCursorPos(&point);
         ScreenToClient(window, &point);
 
         HDC hdc = GetDC(window);
 
-        if (GetShapeType() != 0) {
-            DrawPreview(hdc, lastX, lastY);
-        }
-
+        DrawPreview(hdc, lastX, lastY);
 
         lastX = point.x;
         lastY = point.y;
 
-        if (GetShapeType() != 0) {
-            DrawPreview(hdc, lastX, lastY);
-        }
-
+        DrawPreview(hdc, lastX, lastY);
 
         ReleaseDC(window, hdc);
     }
@@ -163,7 +135,7 @@ public:
             }
         }
 
-        if (drawing && GetShapeType() != 0) {
+        if (drawing) {
             DrawPreview(hdc, lastX, lastY);
         }
 
@@ -174,14 +146,12 @@ public:
 class PointEditor : public ShapeEditor
 {
 protected:
-    Shape* CreateShape(long, long, long, long) override
+    Shape* CreateShape(long x1, long y1, long x2, long y2) override
     {
-        return new PointShape();
-    }
+        Shape* shape = new PointShape();
+        shape->Set(x1, y1, x2, y2);
 
-    int GetShapeType() override
-    {
-        return 0;
+        return shape;
     }
 
 public:
@@ -191,14 +161,18 @@ public:
 class LineEditor : public ShapeEditor
 {
 protected:
-    Shape* CreateShape(long, long, long, long) override
+    Shape* CreateShape(long x1, long y1, long x2, long y2) override
     {
-        return new LineShape();
+        Shape* shape = new LineShape();
+        shape->Set(x1, y1, x2, y2);
+
+        return shape;
     }
 
-    int GetShapeType() override
+    void DrawOutline(HDC hdc, long x, long y) override
     {
-        return 1;
+        MoveToEx(hdc, startX, startY, NULL);
+        LineTo(hdc, x, y);
     }
 
 public:
@@ -224,9 +198,17 @@ protected:
         return shape;
     }
 
-    int GetShapeType() override
+    void DrawOutline(HDC hdc, long x, long y) override
     {
-        return 2;
+        long oppositeX = 2 * startX - x;
+        long oppositeY = 2 * startY - y;
+
+        long left = (oppositeX < x) ? oppositeX : x;
+        long top = (oppositeY < y) ? oppositeY : y;
+        long right = (oppositeX > x) ? oppositeX : x;
+        long bottom = (oppositeY > y) ? oppositeY : y;
+
+        Rectangle(hdc, left, top, right, bottom);
     }
 
 public:
@@ -236,14 +218,34 @@ public:
 class EllipseEditor : public ShapeEditor
 {
 protected:
-    Shape* CreateShape(long, long, long, long) override
+    Shape* CreateShape(long x1, long y1, long x2, long y2) override
     {
-        return new EllipseShape(true, RGB(0, 255, 255));
+        if (x1 > x2) {
+            long temp = x1;
+            x1 = x2;
+            x2 = temp;
+        }
+
+        if (y1 > y2) {
+            long temp = y1;
+            y1 = y2;
+            y2 = temp;
+        }
+
+        Shape* shape = new EllipseShape(true, RGB(0, 255, 255));
+        shape->Set(x1, y1, x2, y2);
+
+        return shape;
     }
 
-    int GetShapeType() override
+    void DrawOutline(HDC hdc, long x, long y) override
     {
-        return 3;
+        long left = (startX < x) ? startX : x;
+        long top = (startY < y) ? startY : y;
+        long right = (startX > x) ? startX : x;
+        long bottom = (startY > y) ? startY : y;
+
+        Ellipse(hdc, left, top, right, bottom);
     }
 
 public:
@@ -277,28 +279,32 @@ void ShapeObjectsEditor::StartPointEditor(HWND hwnd)
 {
     delete currentEditor;
     currentEditor = new PointEditor(pcshape, &shapeCount, hwnd);
-    SetWindowText(hwnd, L"Графічний редактор - Точка");
+    SetWindowTextW(hwnd, L"Графічний редактор - Точка");
+    InvalidateRect(hwnd, NULL, TRUE);
 }
 
 void ShapeObjectsEditor::StartLineEditor(HWND hwnd)
 {
     delete currentEditor;
     currentEditor = new LineEditor(pcshape, &shapeCount, hwnd);
-    SetWindowText(hwnd, L"Графічний редактор - Лінія");
+    SetWindowTextW(hwnd, L"Графічний редактор - Лінія");
+    InvalidateRect(hwnd, NULL, TRUE);
 }
 
 void ShapeObjectsEditor::StartRectEditor(HWND hwnd)
 {
     delete currentEditor;
     currentEditor = new RectEditor(pcshape, &shapeCount, hwnd);
-    SetWindowText(hwnd, L"Графічний редактор - Прямокутник");
+    SetWindowTextW(hwnd, L"Графічний редактор - Прямокутник");
+    InvalidateRect(hwnd, NULL, TRUE);
 }
 
 void ShapeObjectsEditor::StartEllipseEditor(HWND hwnd)
 {
     delete currentEditor;
     currentEditor = new EllipseEditor(pcshape, &shapeCount, hwnd);
-    SetWindowText(hwnd, L"Графічний редактор - Еліпс");
+    SetWindowTextW(hwnd, L"Графічний редактор - Еліпс");
+    InvalidateRect(hwnd, NULL, TRUE);
 }
 
 
@@ -327,5 +333,9 @@ void ShapeObjectsEditor::OnPaint(HWND hwnd)
 {
     if (currentEditor != nullptr) {
         currentEditor->OnPaint(hwnd);
+    } else {
+        PAINTSTRUCT ps;
+        BeginPaint(hwnd, &ps);
+        EndPaint(hwnd, &ps);
     }
 }
