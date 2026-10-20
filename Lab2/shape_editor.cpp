@@ -279,7 +279,7 @@ void ShapeObjectsEditor::StartPointEditor(HWND hwnd)
 {
     delete currentEditor;
     currentEditor = new PointEditor(pcshape, &shapeCount, hwnd);
-    SetWindowTextW(hwnd, L"Графічний редактор - Точка");
+    SetWindowTextW(hwnd, L"Graphic Editor - Point");
     InvalidateRect(hwnd, NULL, TRUE);
 }
 
@@ -287,7 +287,8 @@ void ShapeObjectsEditor::StartLineEditor(HWND hwnd)
 {
     delete currentEditor;
     currentEditor = new LineEditor(pcshape, &shapeCount, hwnd);
-    SetWindowTextW(hwnd, L"Графічний редактор - Лінія");
+    SetWindowTextW(hwnd, L"Graphic Editor - Line");
+
     InvalidateRect(hwnd, NULL, TRUE);
 }
 
@@ -295,7 +296,7 @@ void ShapeObjectsEditor::StartRectEditor(HWND hwnd)
 {
     delete currentEditor;
     currentEditor = new RectEditor(pcshape, &shapeCount, hwnd);
-    SetWindowTextW(hwnd, L"Графічний редактор - Прямокутник");
+    SetWindowTextW(hwnd, L"Graphic Editor - Rectangle");
     InvalidateRect(hwnd, NULL, TRUE);
 }
 
@@ -303,7 +304,7 @@ void ShapeObjectsEditor::StartEllipseEditor(HWND hwnd)
 {
     delete currentEditor;
     currentEditor = new EllipseEditor(pcshape, &shapeCount, hwnd);
-    SetWindowTextW(hwnd, L"Графічний редактор - Еліпс");
+    SetWindowTextW(hwnd, L"Graphic Editor - Ellipse");
     InvalidateRect(hwnd, NULL, TRUE);
 }
 

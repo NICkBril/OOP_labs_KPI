@@ -79,7 +79,7 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 
     HWND hWnd = CreateWindowW(
         szWindowClass,
-        szTitle,
+        L"Graphic Editor",
         WS_OVERLAPPEDWINDOW,
         CW_USEDEFAULT,
         0,
