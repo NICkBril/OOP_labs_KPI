@@ -83,6 +83,9 @@ public:
         GetCursorPos(&point);
         ScreenToClient(window, &point);
 
+        lastX = point.x;
+        lastY = point.y;
+
         drawing = false;
         ReleaseCapture();
 
@@ -95,7 +98,7 @@ public:
             }
         }
 
-        InvalidateRect(window, NULL, TRUE);
+        InvalidateRect(window, NULL, FALSE);
     }
 
     void OnMouseMove(HWND window) override
@@ -111,7 +114,7 @@ public:
         lastX = point.x;
         lastY = point.y;
 
-        InvalidateRect(window, NULL, TRUE);
+        InvalidateRect(window, NULL, FALSE);
     }
 
     void OnPaint(HWND window) override
@@ -119,15 +122,82 @@ public:
         PAINTSTRUCT ps;
         HDC hdc = BeginPaint(window, &ps);
 
+        RECT clientRect;
+        GetClientRect(window, &clientRect);
+
+        int width = clientRect.right - clientRect.left;
+        int height = clientRect.bottom - clientRect.top;
+
+        if (width <= 0 || height <= 0) {
+            EndPaint(window, &ps);
+
+            return;
+        }
+
+        HDC memoryDC = CreateCompatibleDC(hdc);
+        HBITMAP bitmap = CreateCompatibleBitmap(hdc, width, height);
+
+        if (memoryDC == NULL || bitmap == NULL) {
+            if (bitmap != NULL) {
+                DeleteObject(bitmap);
+            }
+
+            if (memoryDC != NULL) {
+                DeleteDC(memoryDC);
+            }
+
+            FillRect(
+                hdc,
+                &clientRect,
+                (HBRUSH)GetStockObject(WHITE_BRUSH)
+            );
+
+            for (int i = 0; i < *shapeCount; ++i) {
+                if (pcshape[i] != nullptr) {
+                    pcshape[i]->Show(hdc);
+                }
+            }
+
+            if (drawing) {
+                DrawPreview(hdc, lastX, lastY);
+            }
+
+            EndPaint(window, &ps);
+            return;
+        }
+
+        HBITMAP oldBitmap = (HBITMAP)SelectObject(
+            memoryDC, bitmap
+        );
+
+        FillRect(
+            memoryDC,
+            &clientRect,
+            (HBRUSH)GetStockObject(WHITE_BRUSH)
+        );
+
         for (int i = 0; i < *shapeCount; ++i) {
             if (pcshape[i] != nullptr) {
-                pcshape[i]->Show(hdc);
+                pcshape[i]->Show(memoryDC);
             }
         }
 
         if (drawing) {
-            DrawPreview(hdc, lastX, lastY);
+            DrawPreview(memoryDC, lastX, lastY);
         }
+
+        BitBlt(
+            hdc,
+            0, 0,
+            width, height,
+            memoryDC,
+            0, 0,
+            SRCCOPY
+        );
+
+        SelectObject(memoryDC, oldBitmap);
+        DeleteObject(bitmap);
+        DeleteDC(memoryDC);
 
         EndPaint(window, &ps);
     }
@@ -259,28 +329,28 @@ void ShapeObjectsEditor::StartPointEditor(HWND hwnd)
 {
     delete currentEditor;
     currentEditor = new PointEditor(pcshape, &shapeCount, hwnd);
-    InvalidateRect(hwnd, NULL, TRUE);
+    InvalidateRect(hwnd, NULL, FALSE);
 }
 
 void ShapeObjectsEditor::StartLineEditor(HWND hwnd)
 {
     delete currentEditor;
     currentEditor = new LineEditor(pcshape, &shapeCount, hwnd);
-    InvalidateRect(hwnd, NULL, TRUE);
+    InvalidateRect(hwnd, NULL, FALSE);
 }
 
 void ShapeObjectsEditor::StartRectEditor(HWND hwnd)
 {
     delete currentEditor;
     currentEditor = new RectEditor(pcshape, &shapeCount, hwnd);
-    InvalidateRect(hwnd, NULL, TRUE);
+    InvalidateRect(hwnd, NULL, FALSE);
 }
 
 void ShapeObjectsEditor::StartEllipseEditor(HWND hwnd)
 {
     delete currentEditor;
     currentEditor = new EllipseEditor(pcshape, &shapeCount, hwnd);
-    InvalidateRect(hwnd, NULL, TRUE);
+    InvalidateRect(hwnd, NULL, FALSE);
 }
 
 void ShapeObjectsEditor::OnLBdown(HWND hwnd)
