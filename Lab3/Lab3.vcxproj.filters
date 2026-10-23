@@ -36,6 +36,9 @@
     <ClInclude Include="shape_editor.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="lab3_app.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Lab3.cpp">
@@ -45,6 +48,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="shape_editor.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="lab3_app.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
