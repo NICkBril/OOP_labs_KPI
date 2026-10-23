@@ -30,12 +30,21 @@
     <ClInclude Include="shape.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="editor.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="shape_editor.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Lab3.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="shape.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="shape_editor.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
