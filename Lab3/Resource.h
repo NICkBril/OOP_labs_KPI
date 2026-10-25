@@ -15,6 +15,8 @@
 #define IDI_SMALL				108
 #define IDC_LAB3			    109
 #define IDC_MYICON				2
+#ifndef IDC_STATIC
+#define IDC_STATIC				-1
 
 #define IDM_POINT              32771
 #define IDM_LINE               32772
@@ -23,8 +25,7 @@
 
 #define IDC_TOOLBAR             1001
 
-#ifndef IDC_STATIC
-#define IDC_STATIC				-1
+
 #endif
 
 
