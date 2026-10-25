@@ -139,13 +139,27 @@
     </Manifest>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="cube_shape.h" />
+    <ClInclude Include="ellipse_shape.h" />
     <ClInclude Include="framework.h" />
     <ClInclude Include="Lab4.h" />
+    <ClInclude Include="line_oo_shape.h" />
+    <ClInclude Include="line_shape.h" />
+    <ClInclude Include="point_shape.h" />
+    <ClInclude Include="rect_shape.h" />
     <ClInclude Include="Resource.h" />
+    <ClInclude Include="shape.h" />
     <ClInclude Include="targetver.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="cube_shape.cpp" />
+    <ClCompile Include="ellipse_shape.cpp" />
     <ClCompile Include="Lab4.cpp" />
+    <ClCompile Include="line_oo_shape.cpp" />
+    <ClCompile Include="line_shape.cpp" />
+    <ClCompile Include="point_shape.cpp" />
+    <ClCompile Include="rect_shape.cpp" />
+    <ClCompile Include="shape.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Lab4.rc" />
