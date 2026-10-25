@@ -48,6 +48,9 @@
     <ClInclude Include="cube_shape.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="my_editor.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Lab4.cpp">
@@ -72,6 +75,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="cube_shape.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="my_editor.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
