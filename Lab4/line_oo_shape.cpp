@@ -10,11 +10,10 @@ void LineOOShape::Show(HDC hdc)
 
     LineShape::Show(hdc);
 
-
-    Set(x1, y1, x1 + CIRCLE_RADIUS, y1);
+    Set(x1, y1, x1 + CIRCLE_RADIUS, y1 + CIRCLE_RADIUS);
     EllipseShape::Show(hdc);
 
-    Set(x2, y2, x2 + CIRCLE_RADIUS, y2);
+    Set(x2, y2, x2 + CIRCLE_RADIUS, y2 + CIRCLE_RADIUS);
     EllipseShape::Show(hdc);
 
 
