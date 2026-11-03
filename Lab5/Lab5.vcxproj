@@ -139,13 +139,35 @@
     </Manifest>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="cube_shape.h" />
+    <ClInclude Include="ellipse_shape.h" />
     <ClInclude Include="framework.h" />
     <ClInclude Include="Lab5.h" />
+    <ClInclude Include="lab5_app.h" />
+    <ClInclude Include="line_oo_shape.h" />
+    <ClInclude Include="line_shape.h" />
+    <ClInclude Include="my_editor.h" />
+    <ClInclude Include="my_table.h" />
+    <ClInclude Include="point_shape.h" />
+    <ClInclude Include="rect_shape.h" />
     <ClInclude Include="Resource.h" />
+    <ClInclude Include="shape.h" />
+    <ClInclude Include="shape_factory.h" />
     <ClInclude Include="targetver.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="cube_shape.cpp" />
+    <ClCompile Include="ellipse_shape.cpp" />
     <ClCompile Include="Lab5.cpp" />
+    <ClCompile Include="lab5_app.cpp" />
+    <ClCompile Include="line_oo_shape.cpp" />
+    <ClCompile Include="line_shape.cpp" />
+    <ClCompile Include="my_editor.cpp" />
+    <ClCompile Include="my_table.cpp" />
+    <ClCompile Include="point_shape.cpp" />
+    <ClCompile Include="rect_shape.cpp" />
+    <ClCompile Include="shape.cpp" />
+    <ClCompile Include="shape_factory.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Lab5.rc" />
