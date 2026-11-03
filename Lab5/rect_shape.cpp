@@ -34,5 +34,5 @@ const char* RectShape::ClassName() const
 
 const wchar_t* RectShape::Title() const
 {
-    return L"Прямокутник";
+    return L"Rectangle";
 }

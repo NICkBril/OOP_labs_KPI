@@ -31,5 +31,5 @@ const char* PointShape::ClassName() const
 
 const wchar_t* PointShape::Title() const
 {
-    return L"Точка";
+    return L"Point";
 }

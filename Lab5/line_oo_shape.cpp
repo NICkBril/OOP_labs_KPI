@@ -32,5 +32,5 @@ const char* LineOOShape::ClassName() const
 
 const wchar_t* LineOOShape::Title() const
 {
-    return L"Лінія з кружечками";
+    return L"Line with circles";
 }

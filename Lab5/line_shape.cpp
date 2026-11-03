@@ -24,5 +24,5 @@ const char* LineShape::ClassName() const
 
 const wchar_t* LineShape::Title() const
 {
-    return L"Лінія";
+    return L"Line";
 }

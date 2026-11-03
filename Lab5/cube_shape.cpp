@@ -51,5 +51,5 @@ const char* CubeShape::ClassName() const
 
 const wchar_t* CubeShape::Title() const
 {
-    return L"Каркас куба";
+    return L"Cube";
 }

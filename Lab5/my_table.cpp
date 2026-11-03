@@ -254,7 +254,7 @@ void MyTable::OnInitDialog(HWND hDlg)
 {
     m_hDlg = hDlg;
 
-    SetWindowTextW(hDlg, L"Таблиця об'єктів");
+    SetWindowTextW(hDlg, L"Table");
 
     HINSTANCE hInstance = reinterpret_cast<HINSTANCE>(
         GetWindowLongPtrW(hDlg, GWLP_HINSTANCE)
@@ -280,7 +280,7 @@ void MyTable::OnInitDialog(HWND hDlg)
         LVS_EX_FULLROWSELECT | LVS_EX_GRIDLINES
     );
 
-    const wchar_t* titles[5] = { L"Назва", L"x1", L"y1", L"x2", L"y2" };
+    const wchar_t* titles[5] = { L"Name", L"x1", L"y1", L"x2", L"y2" };
     const int widths[5] = { 140, 60, 60, 60, 60 };
 
     for (int i = 0; i < 5; ++i) {
@@ -298,7 +298,7 @@ void MyTable::OnInitDialog(HWND hDlg)
     }
 
     m_hDelete = CreateWindowExW(
-        0, L"BUTTON", L"Видалити",
+        0, L"BUTTON", L"Delete",
         WS_CHILD | WS_VISIBLE | WS_TABSTOP | BS_PUSHBUTTON,
         0, 0, 0, 0,
         hDlg,
@@ -308,7 +308,7 @@ void MyTable::OnInitDialog(HWND hDlg)
     );
 
     HWND closeButton = CreateWindowExW(
-        0, L"BUTTON", L"Закрити",
+        0, L"BUTTON", L"Close",
         WS_CHILD | WS_VISIBLE | WS_TABSTOP | BS_PUSHBUTTON,
         0, 0, 0, 0,
         hDlg,

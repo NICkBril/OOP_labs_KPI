@@ -47,5 +47,5 @@ const char* EllipseShape::ClassName() const
 
 const wchar_t* EllipseShape::Title() const
 {
-    return L"Еліпс";
+    return L"Ellipse";
 }
