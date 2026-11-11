@@ -1,180 +1,217 @@
-// Object2.cpp : Defines the entry point for the application.
-//
-
 #include "framework.h"
-#include "Object2.h"
+#include "messages.h"
 
-#define MAX_LOADSTRING 100
+#include <vector>
+#include <string>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
+#include <ctime>
+#include <cwchar>
 
-// Global Variables:
-HINSTANCE hInst;                                // current instance
-WCHAR szTitle[MAX_LOADSTRING];                  // The title bar text
-WCHAR szWindowClass[MAX_LOADSTRING];            // the main window class name
-
-// Forward declarations of functions included in this code module:
-ATOM                MyRegisterClass(HINSTANCE hInstance);
-BOOL                InitInstance(HINSTANCE, int);
-LRESULT CALLBACK    WndProc(HWND, UINT, WPARAM, LPARAM);
-INT_PTR CALLBACK    About(HWND, UINT, WPARAM, LPARAM);
-
-int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
-                     _In_opt_ HINSTANCE hPrevInstance,
-                     _In_ LPWSTR    lpCmdLine,
-                     _In_ int       nCmdShow)
+namespace
 {
-    UNREFERENCED_PARAMETER(hPrevInstance);
-    UNREFERENCED_PARAMETER(lpCmdLine);
+    const wchar_t CLASS_NAME[] = L"OBJECT2";
+    const wchar_t TITLE[] = L"Object2 - vector of numbers";
 
-    // TODO: Place code here.
+    const int ROWS_PER_COLUMN = 20;
+    const int COLUMN_WIDTH = 150;
+    const int LINE_HEIGHT = 20;
+}
 
-    // Initialize global strings
-    LoadStringW(hInstance, IDS_APP_TITLE, szTitle, MAX_LOADSTRING);
-    LoadStringW(hInstance, IDC_OBJECT2, szWindowClass, MAX_LOADSTRING);
-    MyRegisterClass(hInstance);
+HWND hWndManager = NULL;
+std::vector<double> data;
+double minValue = 0.0;
+double maxValue = 0.0;
 
-    // Perform application initialization:
-    if (!InitInstance (hInstance, nCmdShow))
-    {
-        return FALSE;
+
+void CreateVector(const Params& p)
+{
+    data.clear();
+
+    minValue = p.minValue;
+    maxValue = p.maxValue;
+
+    for (int i = 0; i < p.n; i++) {
+        double r = (double)rand() / RAND_MAX;
+        data.push_back(p.minValue + (p.maxValue - p.minValue) * r);
+    }
+}
+
+
+bool PutTextToClipboard(HWND hWnd, const std::string& text)
+{
+    HGLOBAL hglb = GlobalAlloc(GHND, text.size() + 1);
+
+    if (hglb == NULL) {
+        return false;
     }
 
-    HACCEL hAccelTable = LoadAccelerators(hInstance, MAKEINTRESOURCE(IDC_OBJECT2));
+    char* p = (char*)GlobalLock(hglb);
+    memcpy(p, text.c_str(), text.size() + 1);
+    GlobalUnlock(hglb);
 
-    MSG msg;
+    if (!OpenClipboard(hWnd)) {
+        GlobalFree(hglb);
+        return false;
+    }
 
-    // Main message loop:
-    while (GetMessage(&msg, nullptr, 0, 0))
-    {
-        if (!TranslateAccelerator(msg.hwnd, hAccelTable, &msg))
-        {
-            TranslateMessage(&msg);
-            DispatchMessage(&msg);
+    EmptyClipboard();
+    
+    if (SetClipboardData(CF_TEXT, hglb) == NULL) {
+        GlobalFree(hglb);
+        CloseClipboard();
+        return false;
+    }
+
+    CloseClipboard();
+
+    return true;
+}
+
+bool SendDataToClipboard(HWND hWnd)
+{
+    std::string text = "x\ty\r\n";
+
+    for (size_t i = 0; i < data.size(); i++) {
+        char line[64];
+        sprintf_s(line, "%d\t%.4f\r\n", (int)(i + 1), data[i]);
+        text += line;
+    }
+
+    return PutTextToClipboard(hWnd, text);
+}
+
+// приймаємо параметри від Lab6
+void OnCopyData(HWND hWnd, WPARAM wParam, LPARAM lParam)
+{
+    HWND sender = (HWND)wParam;
+    COPYDATASTRUCT* cds = (COPYDATASTRUCT*)lParam;
+
+    LPARAM result = 0;
+
+    if (cds->dwData == DATA_PARAMS && cds->cbData == sizeof(Params)) {
+        Params p = *(Params*)cds->lpData;
+
+        CreateVector(p);
+        InvalidateRect(hWnd, NULL, TRUE);
+
+        if (SendDataToClipboard(hWnd)) {
+            result = 1;
         }
     }
 
-    return (int) msg.wParam;
+    if (sender != NULL) {
+        PostMessageW(sender, WM_OBJECT_DONE, (WPARAM)hWnd, result);
+    }
 }
 
-
-
-//
-//  FUNCTION: MyRegisterClass()
-//
-//  PURPOSE: Registers the window class.
-//
-ATOM MyRegisterClass(HINSTANCE hInstance)
+void OnPaint(HWND hWnd)
 {
-    WNDCLASSEXW wcex;
+    PAINTSTRUCT ps;
+    HDC hdc = BeginPaint(hWnd, &ps);
 
-    wcex.cbSize = sizeof(WNDCLASSEX);
+    wchar_t text[100];
 
-    wcex.style          = CS_HREDRAW | CS_VREDRAW;
-    wcex.lpfnWndProc    = WndProc;
-    wcex.cbClsExtra     = 0;
-    wcex.cbWndExtra     = 0;
-    wcex.hInstance      = hInstance;
-    wcex.hIcon          = LoadIcon(hInstance, MAKEINTRESOURCE(IDI_OBJECT2));
-    wcex.hCursor        = LoadCursor(nullptr, IDC_ARROW);
-    wcex.hbrBackground  = (HBRUSH)(COLOR_WINDOW+1);
-    wcex.lpszMenuName   = MAKEINTRESOURCEW(IDC_OBJECT2);
-    wcex.lpszClassName  = szWindowClass;
-    wcex.hIconSm        = LoadIcon(wcex.hInstance, MAKEINTRESOURCE(IDI_SMALL));
+    if (data.empty()) {
+        TextOutW(hdc, 10, 10, L"Waiting for data...", 19);
+    } else {
+        swprintf_s(
+            text, L"Vector: n = %d,   range [%.2f; %.2f]",
+            (int)data.size(), minValue, maxValue
+        );
+        TextOutW(hdc, 10, 10, text, (int)wcslen(text));
 
-    return RegisterClassExW(&wcex);
+        for (size_t i = 0; i < data.size(); i++) {
+            int column = (int)i / ROWS_PER_COLUMN;
+            int row = (int)i % ROWS_PER_COLUMN;
+
+            int x = 10 + column * COLUMN_WIDTH;
+            int y = 45 + row * LINE_HEIGHT;
+
+            swprintf_s(text, L"%3d:   %.4f", (int)(i + 1), data[i]);
+            TextOutW(hdc, x, y, text, (int)wcslen(text));
+        }
+    }
+
+    EndPaint(hWnd, &ps);
 }
 
-//
-//   FUNCTION: InitInstance(HINSTANCE, int)
-//
-//   PURPOSE: Saves instance handle and creates main window
-//
-//   COMMENTS:
-//
-//        In this function, we save the instance handle in a global variable and
-//        create and display the main program window.
-//
-BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
-{
-   hInst = hInstance; // Store instance handle in our global variable
 
-   HWND hWnd = CreateWindowW(szWindowClass, szTitle, WS_OVERLAPPEDWINDOW,
-      CW_USEDEFAULT, 0, CW_USEDEFAULT, 0, nullptr, nullptr, hInstance, nullptr);
-
-   if (!hWnd)
-   {
-      return FALSE;
-   }
-
-   ShowWindow(hWnd, nCmdShow);
-   UpdateWindow(hWnd);
-
-   return TRUE;
-}
-
-//
-//  FUNCTION: WndProc(HWND, UINT, WPARAM, LPARAM)
-//
-//  PURPOSE: Processes messages for the main window.
-//
-//  WM_COMMAND  - process the application menu
-//  WM_PAINT    - Paint the main window
-//  WM_DESTROY  - post a quit message and return
-//
-//
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
-    switch (message)
-    {
-    case WM_COMMAND:
-        {
-            int wmId = LOWORD(wParam);
-            // Parse the menu selections:
-            switch (wmId)
-            {
-            case IDM_ABOUT:
-                DialogBox(hInst, MAKEINTRESOURCE(IDD_ABOUTBOX), hWnd, About);
-                break;
-            case IDM_EXIT:
-                DestroyWindow(hWnd);
-                break;
-            default:
-                return DefWindowProc(hWnd, message, wParam, lParam);
-            }
+    switch (message) {
+    case WM_CREATE:
+        if (hWndManager != NULL) {
+            PostMessageW(hWndManager, WM_OBJECT_READY, (WPARAM)hWnd, 0);
+        } else {
+            // запуск без Lab6: тестові дані для перевірки 
+            Params p = { 20, 0.0, 100.0 };
+            CreateVector(p);
+            SendDataToClipboard(hWnd);
         }
         break;
+
+    case WM_COPYDATA:
+        OnCopyData(hWnd, wParam, lParam);
+        return TRUE;
+
     case WM_PAINT:
-        {
-            PAINTSTRUCT ps;
-            BeginPaint(hWnd, &ps);
-            // TODO: Add any drawing code here...
-            EndPaint(hWnd, &ps);
-        }
+        OnPaint(hWnd);
         break;
+
     case WM_DESTROY:
         PostQuitMessage(0);
         break;
+
     default:
-        return DefWindowProc(hWnd, message, wParam, lParam);
+        return DefWindowProcW(hWnd, message, wParam, lParam);
     }
+
     return 0;
 }
 
-// Message handler for about box.
-INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
+int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE, LPWSTR lpCmdLine, int nCmdShow)
 {
-    UNREFERENCED_PARAMETER(lParam);
-    switch (message)
-    {
-    case WM_INITDIALOG:
-        return (INT_PTR)TRUE;
+    srand((unsigned)time(NULL));
 
-    case WM_COMMAND:
-        if (LOWORD(wParam) == IDOK || LOWORD(wParam) == IDCANCEL)
-        {
-            EndDialog(hDlg, LOWORD(wParam));
-            return (INT_PTR)TRUE;
-        }
-        break;
+    if (lpCmdLine != NULL && lpCmdLine[0] != 0) {
+        hWndManager = (HWND)(ULONG_PTR)wcstoull(lpCmdLine, NULL, 10);
     }
-    return (INT_PTR)FALSE;
+
+    WNDCLASSEXW wc = {};
+
+    wc.cbSize = sizeof(WNDCLASSEXW);
+    wc.style = CS_HREDRAW | CS_VREDRAW;
+    wc.lpfnWndProc = WndProc;
+    wc.hInstance = hInstance;
+    wc.hCursor = LoadCursorW(NULL, IDC_ARROW);
+    wc.hbrBackground = (HBRUSH)(COLOR_WINDOW + 1);
+    wc.lpszClassName = CLASS_NAME;
+
+    if (!RegisterClassExW(&wc)) {
+        return 0;
+    }
+
+    HWND hWnd = CreateWindowW(
+        CLASS_NAME, TITLE, WS_OVERLAPPEDWINDOW,
+        CW_USEDEFAULT, 0, 800, 600,
+        NULL, NULL, hInstance, NULL
+    );
+
+    if (hWnd == NULL) {
+        return 0;
+    }
+
+    ShowWindow(hWnd, nCmdShow);
+    UpdateWindow(hWnd);
+
+    MSG msg;
+
+    while (GetMessageW(&msg, NULL, 0, 0) > 0) {
+        TranslateMessage(&msg);
+        DispatchMessageW(&msg);
+    }
+
+    return (int)msg.wParam;
 }
