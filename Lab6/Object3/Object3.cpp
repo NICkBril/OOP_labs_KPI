@@ -1,180 +1,303 @@
-// Object3.cpp : Defines the entry point for the application.
-//
-
 #include "framework.h"
-#include "Object3.h"
+#include "messages.h"
 
-#define MAX_LOADSTRING 100
+#include <vector>
+#include <string>
+#include <sstream>
+#include <algorithm>
+#include <cstdio>
+#include <cstdlib>
+#include <cwchar>
 
-// Global Variables:
-HINSTANCE hInst;                                // current instance
-WCHAR szTitle[MAX_LOADSTRING];                  // The title bar text
-WCHAR szWindowClass[MAX_LOADSTRING];            // the main window class name
-
-// Forward declarations of functions included in this code module:
-ATOM                MyRegisterClass(HINSTANCE hInstance);
-BOOL                InitInstance(HINSTANCE, int);
-LRESULT CALLBACK    WndProc(HWND, UINT, WPARAM, LPARAM);
-INT_PTR CALLBACK    About(HWND, UINT, WPARAM, LPARAM);
-
-int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
-                     _In_opt_ HINSTANCE hPrevInstance,
-                     _In_ LPWSTR    lpCmdLine,
-                     _In_ int       nCmdShow)
+namespace
 {
-    UNREFERENCED_PARAMETER(hPrevInstance);
-    UNREFERENCED_PARAMETER(lpCmdLine);
+    const wchar_t CLASS_NAME[] = L"OBJECT3";
+    const wchar_t TITLE[] = L"Object3 - graphic";
+}
 
-    // TODO: Place code here.
+HWND hWndManager = NULL;
+std::vector<double> values;
 
-    // Initialize global strings
-    LoadStringW(hInstance, IDS_APP_TITLE, szTitle, MAX_LOADSTRING);
-    LoadStringW(hInstance, IDC_OBJECT3, szWindowClass, MAX_LOADSTRING);
-    MyRegisterClass(hInstance);
+std::string GetTextFromClipboard(HWND hWnd)
+{
+    std::string result;
 
-    // Perform application initialization:
-    if (!InitInstance (hInstance, nCmdShow))
-    {
-        return FALSE;
+    if (!IsClipboardFormatAvailable(CF_TEXT)) {
+        return result;
     }
 
-    HACCEL hAccelTable = LoadAccelerators(hInstance, MAKEINTRESOURCE(IDC_OBJECT3));
+    if (!OpenClipboard(hWnd)) {
+        return result;
+    }
 
-    MSG msg;
+    HGLOBAL hglb = GetClipboardData(CF_TEXT);
 
-    // Main message loop:
-    while (GetMessage(&msg, nullptr, 0, 0))
-    {
-        if (!TranslateAccelerator(msg.hwnd, hAccelTable, &msg))
-        {
-            TranslateMessage(&msg);
-            DispatchMessage(&msg);
+    if (hglb != NULL) {
+        const char* text = (const char*)GlobalLock(hglb);
+
+        if (text != NULL) {
+            result = text;
+            GlobalUnlock(hglb);
         }
     }
 
-    return (int) msg.wParam;
+    CloseClipboard();
+
+    return result;
 }
 
 
-
-//
-//  FUNCTION: MyRegisterClass()
-//
-//  PURPOSE: Registers the window class.
-//
-ATOM MyRegisterClass(HINSTANCE hInstance)
+void ParseData(const std::string& text)
 {
-    WNDCLASSEXW wcex;
+    values.clear();
 
-    wcex.cbSize = sizeof(WNDCLASSEX);
+    std::istringstream in(text);
+    std::string line;
 
-    wcex.style          = CS_HREDRAW | CS_VREDRAW;
-    wcex.lpfnWndProc    = WndProc;
-    wcex.cbClsExtra     = 0;
-    wcex.cbWndExtra     = 0;
-    wcex.hInstance      = hInstance;
-    wcex.hIcon          = LoadIcon(hInstance, MAKEINTRESOURCE(IDI_OBJECT3));
-    wcex.hCursor        = LoadCursor(nullptr, IDC_ARROW);
-    wcex.hbrBackground  = (HBRUSH)(COLOR_WINDOW+1);
-    wcex.lpszMenuName   = MAKEINTRESOURCEW(IDC_OBJECT3);
-    wcex.lpszClassName  = szWindowClass;
-    wcex.hIconSm        = LoadIcon(wcex.hInstance, MAKEINTRESOURCE(IDI_SMALL));
+    while (std::getline(in, line)) {
+        int index;
+        double value;
 
-    return RegisterClassExW(&wcex);
+        if (sscanf_s(line.c_str(), "%d %lf", &index, &value) == 2) {
+            values.push_back(value);
+        }
+    }
 }
 
-//
-//   FUNCTION: InitInstance(HINSTANCE, int)
-//
-//   PURPOSE: Saves instance handle and creates main window
-//
-//   COMMENTS:
-//
-//        In this function, we save the instance handle in a global variable and
-//        create and display the main program window.
-//
-BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
+
+void OnDoGraph(HWND hWnd, HWND sender)
 {
-   hInst = hInstance; // Store instance handle in our global variable
+    ParseData(GetTextFromClipboard(hWnd));
 
-   HWND hWnd = CreateWindowW(szWindowClass, szTitle, WS_OVERLAPPEDWINDOW,
-      CW_USEDEFAULT, 0, CW_USEDEFAULT, 0, nullptr, nullptr, hInstance, nullptr);
+    InvalidateRect(hWnd, NULL, TRUE);
 
-   if (!hWnd)
-   {
-      return FALSE;
-   }
-
-   ShowWindow(hWnd, nCmdShow);
-   UpdateWindow(hWnd);
-
-   return TRUE;
+    if (sender != NULL) {
+        PostMessageW(
+            sender, WM_OBJECT_DONE,
+            (WPARAM)hWnd, values.empty() ? 0 : 1
+        );
+    }
 }
 
-//
-//  FUNCTION: WndProc(HWND, UINT, WPARAM, LPARAM)
-//
-//  PURPOSE: Processes messages for the main window.
-//
-//  WM_COMMAND  - process the application menu
-//  WM_PAINT    - Paint the main window
-//  WM_DESTROY  - post a quit message and return
-//
-//
+void OnPaint(HWND hWnd)
+{
+    PAINTSTRUCT ps;
+    HDC hdc = BeginPaint(hWnd, &ps);
+
+    if (values.empty()) {
+        TextOutW(hdc, 10, 10, L"No data for the graphic", 23);
+        EndPaint(hWnd, &ps);
+        return;
+    }
+
+    RECT rc;
+    GetClientRect(hWnd, &rc);
+
+    int plotLeft = 70;
+    int plotRight = rc.right - 30;
+    int plotTop = 40;
+    int plotBottom = rc.bottom - 50;
+
+    if (plotRight - plotLeft < 50 || plotBottom - plotTop < 50) {
+        EndPaint(hWnd, &ps);
+        return;
+    }
+
+    int n = (int)values.size();
+
+    double yMin = *std::min_element(values.begin(), values.end());
+    double yMax = *std::max_element(values.begin(), values.end());
+
+    if (yMax - yMin < 1e-9) {
+        yMin -= 1.0;
+        yMax += 1.0;
+    }
+
+    double xMin = 1.0;
+    double xMax = (n == 1) ? 2.0 : (double)n;
+
+
+    auto toX = [&](double x) {
+        return plotLeft + (int)((x - xMin) / (xMax - xMin) * (plotRight - plotLeft));
+        };
+
+    auto toY = [&](double y) {
+        return plotBottom - (int)((y - yMin) / (yMax - yMin) * (plotBottom - plotTop));
+        };
+
+    SetBkMode(hdc, TRANSPARENT);
+
+    wchar_t text[64];
+
+    swprintf_s(text, L"y = f(x), n = %d", n);
+    TextOutW(hdc, plotLeft, 10, text, (int)wcslen(text));
+
+    // сітка + позначення для Y
+    HPEN gridPen = CreatePen(PS_SOLID, 1, RGB(220, 220, 220));
+    HPEN oldPen = (HPEN)SelectObject(hdc, gridPen);
+
+    SetTextAlign(hdc, TA_RIGHT | TA_TOP);
+
+    for (int k = 0; k <= 5; k++) {
+        double value = yMin + (yMax - yMin) * k / 5.0;
+        int y = toY(value);
+
+        MoveToEx(hdc, plotLeft, y, NULL);
+        LineTo(hdc, plotRight, y);
+
+        swprintf_s(text, L"%.2f", value);
+        TextOutW(hdc, plotLeft - 8, y - 8, text, (int)wcslen(text));
+    }
+
+    // сітка + позначення для X
+    SetTextAlign(hdc, TA_CENTER | TA_TOP);
+
+    int step = n / 10;
+
+    if (step < 1) {
+        step = 1;
+    }
+
+    for (int i = 1; i <= n; i++) {
+        if (i == 1 || i % step == 0) {
+            int x = toX(i);
+
+            MoveToEx(hdc, x, plotTop, NULL);
+            LineTo(hdc, x, plotBottom);
+
+            swprintf_s(text, L"%d", i);
+            TextOutW(hdc, x, plotBottom + 8, text, (int)wcslen(text));
+        }
+    }
+
+    SetTextAlign(hdc, TA_LEFT | TA_TOP);
+
+    // лінія y = 0
+    HPEN zeroPen = CreatePen(PS_SOLID, 1, RGB(120, 120, 120));
+    SelectObject(hdc, zeroPen);
+
+    if (yMin < 0 && yMax > 0) {
+        MoveToEx(hdc, plotLeft, toY(0), NULL);
+        LineTo(hdc, plotRight, toY(0));
+    }
+
+
+    // осі координат
+    HPEN axisPen = CreatePen(PS_SOLID, 2, RGB(0, 0, 0));
+    SelectObject(hdc, axisPen);
+
+    MoveToEx(hdc, plotLeft, plotTop, NULL);
+    LineTo(hdc, plotLeft, plotBottom);
+    LineTo(hdc, plotRight, plotBottom);
+
+    TextOutW(hdc, plotLeft + 6, plotTop - 18, L"y", 1);
+    TextOutW(hdc, plotRight - 10, plotBottom + 25, L"x", 1);
+    
+
+    HPEN linePen = CreatePen(PS_SOLID, 2, RGB(0, 0, 255));
+    SelectObject(hdc, linePen);
+
+    MoveToEx(hdc, toX(1), toY(values[0]), NULL);
+
+    for (int i = 1; i < n; i++) {
+        LineTo(hdc, toX(i + 1), toY(values[i]));
+    }
+
+    if (n <= 50) {
+        HBRUSH brush = CreateSolidBrush(RGB(0, 0, 255));
+        HBRUSH oldBrush = (HBRUSH)SelectObject(hdc, brush);
+
+        for (int i = 0; i < n; i++) {
+            int x = toX(i + 1);
+            int y = toY(values[i]);
+
+            Ellipse(hdc, x - 3, y - 3, x + 4, y + 4);
+        }
+
+        SelectObject(hdc, oldBrush);
+        DeleteObject(brush);
+    }
+
+    SelectObject(hdc, oldPen);
+
+    DeleteObject(gridPen);
+    DeleteObject(zeroPen);
+    DeleteObject(axisPen);
+    DeleteObject(linePen);
+
+    EndPaint(hWnd, &ps);
+}
+
+
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
-    switch (message)
-    {
-    case WM_COMMAND:
-        {
-            int wmId = LOWORD(wParam);
-            // Parse the menu selections:
-            switch (wmId)
-            {
-            case IDM_ABOUT:
-                DialogBox(hInst, MAKEINTRESOURCE(IDD_ABOUTBOX), hWnd, About);
-                break;
-            case IDM_EXIT:
-                DestroyWindow(hWnd);
-                break;
-            default:
-                return DefWindowProc(hWnd, message, wParam, lParam);
-            }
+    switch (message) {
+    case WM_CREATE:
+        if (hWndManager != NULL) {
+            PostMessageW(hWndManager, WM_OBJECT_READY, (WPARAM)hWnd, 0);
+        } else {
+            OnDoGraph(hWnd, NULL);
         }
         break;
+
+    case WM_DO_GRAPH:
+        OnDoGraph(hWnd, (HWND)wParam);
+        break;
+
     case WM_PAINT:
-        {
-            PAINTSTRUCT ps;
-            BeginPaint(hWnd, &ps);
-            // TODO: Add any drawing code here...
-            EndPaint(hWnd, &ps);
-        }
+        OnPaint(hWnd);
         break;
+
     case WM_DESTROY:
         PostQuitMessage(0);
         break;
+
     default:
-        return DefWindowProc(hWnd, message, wParam, lParam);
+        return DefWindowProcW(hWnd, message, wParam, lParam);
     }
+
     return 0;
 }
 
-// Message handler for about box.
-INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
+int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE, LPWSTR lpCmdLine, int nCmdShow)
 {
-    UNREFERENCED_PARAMETER(lParam);
-    switch (message)
-    {
-    case WM_INITDIALOG:
-        return (INT_PTR)TRUE;
-
-    case WM_COMMAND:
-        if (LOWORD(wParam) == IDOK || LOWORD(wParam) == IDCANCEL)
-        {
-            EndDialog(hDlg, LOWORD(wParam));
-            return (INT_PTR)TRUE;
-        }
-        break;
+    if (lpCmdLine != NULL && lpCmdLine[0] != 0) {
+        hWndManager = (HWND)(ULONG_PTR)wcstoull(lpCmdLine, NULL, 10);
     }
-    return (INT_PTR)FALSE;
+
+    WNDCLASSEXW wc = {};
+
+    wc.cbSize = sizeof(WNDCLASSEXW);
+    wc.style = CS_HREDRAW | CS_VREDRAW;
+    wc.lpfnWndProc = WndProc;
+    wc.hInstance = hInstance;
+    wc.hCursor = LoadCursorW(NULL, IDC_ARROW);
+    wc.hbrBackground = (HBRUSH)(COLOR_WINDOW + 1);
+    wc.lpszClassName = CLASS_NAME;
+
+    if (!RegisterClassExW(&wc)) {
+        return 0;
+    }
+
+    HWND hWnd = CreateWindowW(
+        CLASS_NAME, TITLE, WS_OVERLAPPEDWINDOW,
+        CW_USEDEFAULT, 0, 800, 600,
+        NULL, NULL, hInstance, NULL
+    );
+
+    if (hWnd == NULL) {
+        return 0;
+    }
+
+    ShowWindow(hWnd, nCmdShow);
+    UpdateWindow(hWnd);
+
+    MSG msg;
+
+    while (GetMessageW(&msg, NULL, 0, 0) > 0) {
+        TranslateMessage(&msg);
+        DispatchMessageW(&msg);
+    }
+
+    return (int)msg.wParam;
 }
