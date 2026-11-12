@@ -52,10 +52,22 @@ bool RunProgram(const wchar_t* name)
         *(slash + 1) = 0;
     }
 
-    wchar_t command[2 * MAX_PATH];
+    wchar_t projectPath[MAX_PATH];
+
     swprintf_s(
-        command, L"\"%s%s\" %llu",
-        path, name, (unsigned long long)(ULONG_PTR)hMainWnd
+        projectPath,
+        L"%s..\\%s\\Debug\\%s.exe",
+        path,
+        name,
+        name
+    );
+
+    wchar_t command[2 * MAX_PATH];
+
+    swprintf_s(
+        command,
+        L"\"%s\" %llu",
+        projectPath, (unsigned long long)(ULONG_PTR)hMainWnd
     );
 
     STARTUPINFOW si = {};
@@ -113,7 +125,7 @@ void StartObject3()
         SetState(7, L"State 7: Object3 is already running");
         SendToObject3();
     } else {
-        if (!RunProgram(L"Object3.exe")) {
+        if (!RunProgram(L"Object3")) {
             Fail(L"Cannot open Object3.exe");
             return;
         }
@@ -161,7 +173,7 @@ void StartWork()
         SetState(3, L"State 3: Object2 is already running");
         SendToObject2();
     } else {
-        if (!RunProgram(L"Object2.exe")) {
+        if (!RunProgram(L"Object2")) {
             Fail(L"Cannot open Object2.exe");
             return;
         }
