@@ -233,10 +233,14 @@ bool TableViewClass::Save(const wchar_t* path) const
         return false;
     }
 
-    fwrite(bytes.data(), 1, bytes.size(), file);
-    fclose(file);
+    size_t written = fwrite(bytes.data(), 1, bytes.size(), file);
+    bool success = (written == bytes.size());
 
-    return true;
+    if (fclose(file) != 0) {
+        success = false;
+    }
+
+    return success;
 }
 
 
