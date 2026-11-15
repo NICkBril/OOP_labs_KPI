@@ -90,6 +90,18 @@ namespace
 
         return line;
     }
+
+
+    bool HasNumberColumn(const std::vector<std::wstring>& headers)
+    {
+        if (headers.empty()) {
+            return false;
+        }
+
+        const std::wstring& first = headers[0];
+
+        return first == L"\u2116" || first == L"#" || first == L"No";
+    }
 }
 
 TableViewClass::TableViewClass()
@@ -193,6 +205,15 @@ bool TableViewClass::Load(HWND hwnd, const wchar_t* path)
 
     for (size_t i = 0; i < newRows.size(); ++i) {
         newRows[i].resize(columns);
+    }
+
+    // якщо стовпчика з номерами немає, додаємо його самостійно
+    if (!HasNumberColumn(newHeaders)) {
+        newHeaders.insert(newHeaders.begin(), L"\u2116");
+
+        for (size_t i = 0; i < newRows.size(); ++i) {
+            newRows[i].insert(newRows[i].begin(), std::to_wstring(i + 1));
+        }
     }
 
     headers = newHeaders;
