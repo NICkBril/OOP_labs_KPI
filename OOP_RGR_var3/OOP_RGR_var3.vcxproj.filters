@@ -27,9 +27,15 @@
     <ClInclude Include="OOP_RGR_var3.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="TableView.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="OOP_RGR_var3.cpp">
+    <ClCompile Include="main.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="TableView.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
