@@ -156,6 +156,9 @@
     <Image Include="OOP_RGR_var3.ico" />
     <Image Include="small.ico" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="..\..\..\..\Downloads\ООП_звіт_РГР_Бріль.docx" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

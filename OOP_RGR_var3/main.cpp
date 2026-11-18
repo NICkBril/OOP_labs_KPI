@@ -101,7 +101,6 @@ void OnSave(HWND hwnd)
         return;
     }
 
-    // файл ще не вибрано - це те саме, що "Записати як..."
     if (currentFile[0] == 0) {
         OnSaveAs(hwnd);
         return;
